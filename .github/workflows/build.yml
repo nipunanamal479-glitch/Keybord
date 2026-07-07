@@ -1,34 +1,5 @@
-name: Build APK
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - name: Build with Gradle
+        uses: gradle/gradle-build-action@v3
         with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      # මෙහිදී අපි Gradle ස්වයංක්‍රීයව බාගත කර පද්ධතියට එක් කරනවා
-      - name: Install Gradle
-        run: |
-          wget https://services.gradle.org/distributions/gradle-8.7-bin.zip
-          unzip -d /opt/gradle gradle-8.7-bin.zip
-          echo "PATH=/opt/gradle/gradle-8.7/bin:$PATH" >> $GITHUB_ENV
-
-      # දැන් gradle විධානය කෙලින්ම වැඩ කරනු ඇත
-      - name: Build debug APK
-        run: gradle assembleDebug
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: cipher-keyboard-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          # --stacktrace එක දානවා දෝෂය හරියටම හොයාගන්න
+          arguments: assembleDebug --stacktrace
