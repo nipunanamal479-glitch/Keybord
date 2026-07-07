@@ -1,0 +1,82 @@
+package com.example.cipherkeyboard
+
+import android.inputmethodservice.InputMethodService
+import android.inputmethodservice.Keyboard
+import android.inputmethodservice.KeyboardView
+import android.preference.PreferenceManager
+import android.view.KeyEvent
+import android.view.View
+import android.view.inputmethod.EditorInfo
+
+class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardActionListener {
+
+    private lateinit var keyboardView: KeyboardView
+    private lateinit var qwertyKeyboard: Keyboard
+    private var cipherMode = false
+    private var keyIndex = 0
+
+    companion object {
+        const val CODE_CIPHER_TOGGLE = -999
+    }
+
+    override fun onCreateInputView(): View {
+        keyboardView = layoutInflater.inflate(R.layout.keyboard_view, null) as KeyboardView
+        qwertyKeyboard = Keyboard(this, R.xml.qwerty)
+        keyboardView.keyboard = qwertyKeyboard
+        keyboardView.setOnKeyboardActionListener(this)
+        return keyboardView
+    }
+
+    override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
+        super.onStartInputView(info, restarting)
+        keyIndex = 0
+    }
+
+    private fun getCipherKey(): String {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val key = prefs.getString("cipher_key", "KEY") ?: "KEY"
+        val clean = key.uppercase().filter { it in 'A'..'Z' }
+        return if (clean.isEmpty()) "KEY" else clean
+    }
+
+    private fun shiftChar(c: Char): Char {
+        val key = getCipherKey()
+        val shift = key[keyIndex % key.length] - 'A'
+        keyIndex++
+        return when {
+            c in 'a'..'z' -> (((c - 'a' + shift) % 26) + 'a'.code).toChar()
+            c in 'A'..'Z' -> (((c - 'A' + shift) % 26) + 'A'.code).toChar()
+            else -> c
+        }
+    }
+
+    override fun onKey(primaryCode: Int, keyCodes: IntArray?) {
+        val ic = currentInputConnection ?: return
+        when (primaryCode) {
+            CODE_CIPHER_TOGGLE -> {
+                cipherMode = !cipherMode
+                keyIndex = 0
+            }
+            Keyboard.KEYCODE_DELETE -> ic.deleteSurroundingText(1, 0)
+            Keyboard.KEYCODE_DONE -> {
+                ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
+                ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
+            }
+            Keyboard.KEYCODE_MODE_CHANGE -> { }
+            Keyboard.KEYCODE_SHIFT -> { }
+            else -> {
+                var ch = primaryCode.toChar()
+                if (cipherMode) ch = shiftChar(ch)
+                ic.commitText(ch.toString(), 1)
+            }
+        }
+    }
+
+    override fun onPress(primaryCode: Int) {}
+    override fun onRelease(primaryCode: Int) {}
+    override fun onText(text: CharSequence?) {}
+    override fun swipeLeft() {}
+    override fun swipeRight() {}
+    override fun swipeDown() {}
+    override fun swipeUp() {}
+}
