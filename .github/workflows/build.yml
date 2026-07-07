@@ -1,3 +1,10 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -10,10 +17,14 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # මෙතන gradle-version එක ඉවත් කරන්න
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+      # මෙහිදී අපි Gradle ස්වයංක්‍රීයව බාගත කර පද්ධතියට එක් කරනවා
+      - name: Install Gradle
+        run: |
+          wget https://services.gradle.org/distributions/gradle-8.7-bin.zip
+          unzip -d /opt/gradle gradle-8.7-bin.zip
+          echo "PATH=/opt/gradle/gradle-8.7/bin:$PATH" >> $GITHUB_ENV
 
+      # දැන් gradle විධානය කෙලින්ම වැඩ කරනු ඇත
       - name: Build debug APK
         run: gradle assembleDebug
 
