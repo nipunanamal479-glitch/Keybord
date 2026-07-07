@@ -8,8 +8,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light">
 
+        <!-- මෙතන android:name එක නිවැරදි කරලා තියෙන්නේ -->
         <service
-            android:name=".CipherIMEService"
+            android:name=".CipherInputMethodService"
             android:label="Cipher Keyboard"
             android:permission="android.permission.BIND_INPUT_METHOD"
             android:exported="true">
@@ -21,6 +22,7 @@
             </intent-filter>
         </service>
 
+        <!-- Settings Activity එක -->
         <activity
             android:name=".SettingsActivity"
             android:exported="true">
