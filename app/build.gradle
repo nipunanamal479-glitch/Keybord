@@ -1,30 +1,35 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application
-        android:allowBackup="true"
-        android:icon="@android:drawable/ic_dialog_email"
-        android:label="Cipher Keyboard"
-        android:theme="@android:style/Theme.Material.Light">
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
 
-        <activity
-            android:name=".SettingsActivity"
-            android:exported="true"
-            android:label="Cipher Keyboard Settings">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+android {
+    namespace 'com.yourpackage.cipherkeyboard'
+    compileSdk 34
 
-        <service
-            android:name=".CipherInputMethodService"
-            android:permission="android.permission.BIND_INPUT_METHOD"
-            android:exported="true"
-            android:label="Cipher Keyboard">
-            <intent-filter>
-                <action android:name="android.view.InputMethod" />
-            </intent-filter>
-            <meta-data android:name="android.view.im" android:resource="@xml/method" />
-        </service>
-    </application>
-</manifest>
+    defaultConfig {
+        applicationId "com.yourpackage.cipherkeyboard"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+}
