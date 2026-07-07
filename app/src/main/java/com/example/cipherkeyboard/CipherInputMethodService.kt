@@ -1,52 +1,83 @@
+package com.example.cipherkeyboard
 
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/keyboard_root"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="#1F1F1F"
-    android:padding="4dp">
+import android.content.ClipboardManager
+import android.content.Context
+import android.graphics.Color
+import android.inputmethodservice.InputMethodService
+import android.inputmethodservice.Keyboard
+import android.inputmethodservice.KeyboardView
+import android.os.Handler
+import android.os.Looper
+import android.view.View
+import android.view.inputmethod.ExtractedTextRequest
+import android.widget.Button
+import android.widget.LinearLayout
 
-    <!-- 🔐 රහස් වැඩකටයුතු බටන්ස් දෙක (Encode / Decode) -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="45dp"
-        android:orientation="horizontal"
-        android:layout_marginBottom="5dp">
+class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardActionListener {
+
+    private lateinit var keyboardRoot: LinearLayout
+    private val handler = Handler(Looper.getMainLooper())
+    private var hue = 0f
+
+    private val rgbAnimation = object : Runnable {
+        override fun run() {
+            hue = (hue + 10) % 360
+            keyboardRoot.setBackgroundColor(Color.HSVToColor(floatArrayOf(hue, 0.7f, 0.5f)))
+            handler.postDelayed(this, 50)
+        }
+    }
+
+    override fun onCreateInputView(): View {
+        val root = layoutInflater.inflate(R.layout.keyboard_view, null) as LinearLayout
+        keyboardRoot = root
         
-        <Button
-            android:id="@+id/btn_encode"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:layout_margin="2dp"
-            android:text="🔐 ENCODE"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#2D2D2D"
-            android:textSize="12sp" />
-            
-        <Button
-            android:id="@+id/btn_decode"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:layout_margin="2dp"
-            android:text="🔓 DECODE"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#2D2D2D"
-            android:textSize="12sp" />
-    </LinearLayout>
+        val kv = root.findViewById<KeyboardView>(R.id.keyboard_view)
+        kv.keyboard = Keyboard(this, R.xml.qwerty)
+        kv.setOnKeyboardActionListener(this)
 
-    <!-- අපි පරණ සිස්ටම් එක වෙනුවට අලුත් XML එක කෙළින්ම Android KeyboardView එකෙන්ම ලෝඩ් කරනවා -->
-    <android.inputmethodservice.KeyboardView
-        android:id="@+id/keyboard_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="#1F1F1F"
-        android:keyTextColor="#FFFFFF"
-        android:keyBackground="@android:drawable/btn_default"
-        android:shadowColor="#000000"
-        android:shadowRadius="0.0" />
+        root.findViewById<Button>(R.id.btn_encode).setOnClickListener { processText(true) }
+        root.findViewById<Button>(R.id.btn_decode).setOnClickListener { processText(false) }
+        root.findViewById<Button>(R.id.btn_clip).setOnClickListener {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clipData = clipboard.primaryClip
+            if (clipData != null && clipData.itemCount > 0) {
+                currentInputConnection?.commitText(clipData.getItemAt(0).text.toString(), 1)
+            }
+        }
 
-</LinearLayout>
+        handler.post(rgbAnimation)
+        return root
+    }
+
+    private fun processText(isEncode: Boolean) {
+        val ic = currentInputConnection ?: return
+        val text = ic.getExtractedText(ExtractedTextRequest(), 0)?.text?.toString() ?: ""
+        if (text.isEmpty()) return
+        
+        val shift = if (isEncode) 3 else -3
+        val result = text.map { 
+            if (it in 'a'..'z' || it in 'A'..'Z') it + shift else it 
+        }.joinToString("")
+        
+        ic.deleteSurroundingText(text.length, 0)
+        ic.commitText(result, 1)
+    }
+
+    override fun onKey(p0: Int, p1: IntArray?) {
+        val ic = currentInputConnection ?: return
+        if (p0 == -5) ic.deleteSurroundingText(1, 0) else ic.commitText(p0.toChar().toString(), 1)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        handler.removeCallbacks(rgbAnimation)
+    }
+
+    override fun onPress(p0: Int) {} 
+    override fun onRelease(p0: Int) {} 
+    override fun onText(p0: CharSequence?) {}
+    override fun swipeLeft() {} 
+    override fun swipeRight() {} 
+    override fun swipeDown() {} 
+    override fun swipeUp() {}
+}
