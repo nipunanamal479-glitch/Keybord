@@ -27,6 +27,7 @@
             android:textSize="14sp"
             android:layout_marginBottom="24dp" />
 
+        <!-- Step 1 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -85,6 +86,7 @@
                 android:background="@drawable/keyboard_special_key_bg" />
         </LinearLayout>
 
+        <!-- Step 2 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -180,7 +182,29 @@
             android:layout_height="48dp"
             android:text="Save Key"
             android:textColor="#FFFFFF"
-            android:background="@drawable/keyboard_special_key_bg" />
+            android:background="@drawable/keyboard_special_key_bg"
+            android:layout_marginBottom="20dp"/>
+
+        <!-- New Section: Theme -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Keyboard Theme"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/theme_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:background="@drawable/card_bg"
+            android:padding="16dp"
+            android:layout_marginBottom="20dp" />
 
     </LinearLayout>
 </ScrollView>
+
