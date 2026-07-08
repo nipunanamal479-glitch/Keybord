@@ -43,7 +43,7 @@ class SettingsActivity : AppCompatActivity() {
                 imm.showInputMethodPicker()
             }
         } catch (e: Throwable) {
-            Toast.makeText(this, "CREATE ERROR: ${e.javaClass.simpleName}: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Error: ${e.javaClass.simpleName}: ${e.message}", Toast.LENGTH_LONG).show()
             e.printStackTrace()
         }
     }
@@ -53,16 +53,15 @@ class SettingsActivity : AppCompatActivity() {
         try {
             updateStatus()
         } catch (e: Throwable) {
-            Toast.makeText(this, "RESUME ERROR: ${e.javaClass.simpleName}: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Error: ${e.javaClass.simpleName}: ${e.message}", Toast.LENGTH_LONG).show()
             e.printStackTrace()
         }
     }
 
     private fun updateStatus() {
-        val enabledMethods = Settings.Secure.getString(
-            contentResolver,
-            Settings.Secure.ENABLED_INPUT_METHODS
-        ) ?: ""
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        val enabledList = imm.enabledInputMethodList
+        val isEnabled = enabledList.any { it.packageName == packageName }
 
         val currentMethod = Settings.Secure.getString(
             contentResolver,
@@ -70,16 +69,16 @@ class SettingsActivity : AppCompatActivity() {
         ) ?: ""
 
         when {
-            currentMethod.contains("CipherInputMethodService") -> {
-                statusText.text = "✅ Cipher Keyboard active widiyata select wela"
+            currentMethod.contains(packageName) -> {
+                statusText.text = "✅ Cipher Keyboard is active"
                 statusText.setTextColor(0xFF4CAF50.toInt())
             }
-            enabledMethods.contains("CipherInputMethodService") -> {
-                statusText.text = "⚠ Enable wela, ethnam select karanna one (Step 2)"
+            isEnabled -> {
+                statusText.text = "⚠ Enabled. Now select it (Step 2)"
                 statusText.setTextColor(0xFFFFA726.toInt())
             }
             else -> {
-                statusText.text = "⚠ Keyboard tama enable karala na (Step 1 karanna)"
+                statusText.text = "⚠ Keyboard not enabled yet (do Step 1)"
                 statusText.setTextColor(0xFFFFA726.toInt())
             }
         }
