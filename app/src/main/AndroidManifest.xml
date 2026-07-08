@@ -8,9 +8,8 @@
         android:allowBackup="true"
         android:label="Cipher Keyboard"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light">
+        android:theme="@style/Theme.AppCompat.NoActionBar">
 
-        <!-- ​ෙ​ම​ෙ​ත​ன​ android:name ​එ​ක​ ​ෙ​න​ි​ව​ැ​ර​ැ​ද​ි​ ​ත​ක​ර​ග​ ​ෙ​ම​න​ ​ෙ​ම​ ​ෙ​ම​ත​න -->
         <service
             android:name=".CipherInputMethodService"
             android:label="Cipher Keyboard"
@@ -24,7 +23,6 @@
             </intent-filter>
         </service>
 
-        <!-- Settings Activity ​එ​ක -->
         <activity
             android:name=".SettingsActivity"
             android:exported="true">
