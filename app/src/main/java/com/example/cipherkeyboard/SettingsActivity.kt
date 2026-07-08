@@ -43,14 +43,19 @@ class SettingsActivity : AppCompatActivity() {
                 imm.showInputMethodPicker()
             }
         } catch (e: Throwable) {
-            Toast.makeText(this, "ERROR: ${e.javaClass.simpleName}: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "CREATE ERROR: ${e.javaClass.simpleName}: ${e.message}", Toast.LENGTH_LONG).show()
             e.printStackTrace()
         }
     }
 
     override fun onResume() {
         super.onResume()
-        updateStatus()
+        try {
+            updateStatus()
+        } catch (e: Throwable) {
+            Toast.makeText(this, "RESUME ERROR: ${e.javaClass.simpleName}: ${e.message}", Toast.LENGTH_LONG).show()
+            e.printStackTrace()
+        }
     }
 
     private fun updateStatus() {
