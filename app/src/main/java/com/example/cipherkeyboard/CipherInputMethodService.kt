@@ -3,9 +3,11 @@ package com.example.cipherkeyboard
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.inputmethodservice.InputMethodService
 import android.inputmethodservice.Keyboard
 import android.inputmethodservice.KeyboardView
+import android.preference.PreferenceManager
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
@@ -26,6 +28,7 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
 
     private var isSymbols = false
     private var isShifted = false
+    private var currentTheme: KeyboardTheme = KeyboardThemes.THEMES[0]
 
     private val clipHistory = mutableListOf<String>()
     private lateinit var clipboardManager: ClipboardManager
@@ -56,6 +59,10 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
     override fun onCreateInputView(): View {
         val root = layoutInflater.inflate(R.layout.keyboard_view, null) as LinearLayout
         keyboardRoot = root
+
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val themeIndex = prefs.getInt("selected_theme", 0)
+        currentTheme = KeyboardThemes.THEMES.getOrElse(themeIndex) { KeyboardThemes.THEMES[0] }
 
         kv = root.findViewById(R.id.keyboard_view)
         kv.keyboard = Keyboard(this, R.xml.qwerty)
@@ -92,8 +99,43 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
 
         setupEmojiRow(root)
         refreshClipRow()
+        applyTheme(root)
 
         return root
+    }
+
+    private fun applyTheme(root: LinearLayout) {
+        root.setBackgroundColor(currentTheme.background)
+        kv.setBackgroundColor(currentTheme.background)
+
+        try {
+            val bgDrawable = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 8f * resources.displayMetrics.density
+                setColor(currentTheme.keyBackground)
+            }
+            val field = KeyboardView::class.java.getDeclaredField("mKeyBackground")
+            field.isAccessible = true
+            field.set(kv, bgDrawable)
+            kv.invalidateAllKeys()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        val specialButtons = listOf(
+            root.findViewById<Button>(R.id.btn_cipher),
+            root.findViewById<Button>(R.id.btn_clip),
+            root.findViewById<Button>(R.id.btn_emoji),
+            root.findViewById<Button>(R.id.btn_encode),
+            root.findViewById<Button>(R.id.btn_decode)
+        )
+        for (btn in specialButtons) {
+            btn.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 8f * resources.displayMetrics.density
+                setColor(currentTheme.specialKeyBackground)
+            }
+        }
     }
 
     private fun refreshClipRow() {
@@ -104,7 +146,11 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
             emptyBtn.text = "Clipboard eka empty"
             emptyBtn.textSize = 14f
             emptyBtn.isEnabled = false
-            emptyBtn.setBackgroundResource(R.drawable.keyboard_key_bg)
+            emptyBtn.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 8f * resources.displayMetrics.density
+                setColor(currentTheme.keyBackground)
+            }
             emptyBtn.setTextColor(Color.parseColor("#888888"))
             clipRow.addView(emptyBtn)
             return
@@ -116,7 +162,11 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
             btn.text = label
             btn.textSize = 14f
             btn.isAllCaps = false
-            btn.setBackgroundResource(R.drawable.keyboard_key_bg)
+            btn.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 8f * resources.displayMetrics.density
+                setColor(currentTheme.keyBackground)
+            }
             btn.setTextColor(Color.WHITE)
             btn.setPadding(24, 0, 24, 0)
             val params = LinearLayout.LayoutParams(
@@ -134,7 +184,11 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
         val clearBtn = Button(this)
         clearBtn.text = "🗑 Clear"
         clearBtn.textSize = 14f
-        clearBtn.setBackgroundResource(R.drawable.keyboard_special_key_bg)
+        clearBtn.background = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = 8f * resources.displayMetrics.density
+            setColor(currentTheme.specialKeyBackground)
+        }
         clearBtn.setTextColor(Color.parseColor("#FF6B6B"))
         val clearParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -159,7 +213,11 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
             val btn = Button(this)
             btn.text = emoji
             btn.textSize = 18f
-            btn.setBackgroundResource(R.drawable.keyboard_key_bg)
+            btn.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 8f * resources.displayMetrics.density
+                setColor(currentTheme.keyBackground)
+            }
             btn.setPadding(20, 0, 20, 0)
             val params = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
