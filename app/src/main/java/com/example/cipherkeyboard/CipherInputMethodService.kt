@@ -8,6 +8,7 @@ import android.inputmethodservice.Keyboard
 import android.inputmethodservice.KeyboardView
 import android.os.Handler
 import android.os.Looper
+import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
@@ -21,6 +22,11 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
     private lateinit var keyboardRoot: LinearLayout
     private lateinit var cipherRow: LinearLayout
     private lateinit var emojiScroll: HorizontalScrollView
+    private lateinit var kv: KeyboardView
+
+    private var isSymbols = false
+    private var isShifted = false
+
     private val handler = Handler(Looper.getMainLooper())
     private var hue = 0f
 
@@ -36,7 +42,7 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
         val root = layoutInflater.inflate(R.layout.keyboard_view, null) as LinearLayout
         keyboardRoot = root
 
-        val kv = root.findViewById<KeyboardView>(R.id.keyboard_view)
+        kv = root.findViewById(R.id.keyboard_view)
         kv.keyboard = Keyboard(this, R.xml.qwerty)
         kv.setOnKeyboardActionListener(this)
 
@@ -100,7 +106,6 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
         }
     }
 
-    // panel eka toggle karanawa, anith panel eka open unath auto close karanawa
     private fun togglePanel(panel: View, otherPanel: View) {
         if (otherPanel.visibility == View.VISIBLE) closePanel(otherPanel)
 
@@ -158,7 +163,27 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
 
     override fun onKey(p0: Int, p1: IntArray?) {
         val ic = currentInputConnection ?: return
-        if (p0 == -5) ic.deleteSurroundingText(1, 0) else ic.commitText(p0.toChar().toString(), 1)
+        when (p0) {
+            -5 -> ic.deleteSurroundingText(1, 0)
+            -2 -> {
+                isSymbols = !isSymbols
+                kv.keyboard = Keyboard(this, if (isSymbols) R.xml.symbols else R.xml.qwerty)
+            }
+            -1 -> {
+                isShifted = !isShifted
+                kv.isShifted = isShifted
+            }
+            10, -4 -> ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
+            else -> {
+                var code = p0.toChar()
+                if (isShifted && code.isLetter()) code = code.uppercaseChar()
+                ic.commitText(code.toString(), 1)
+                if (isShifted) {
+                    isShifted = false
+                    kv.isShifted = false
+                }
+            }
+        }
     }
 
     override fun onDestroy() {
