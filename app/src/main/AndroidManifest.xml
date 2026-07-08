@@ -3,12 +3,14 @@
     package="com.example.cipherkeyboard">
 
     <application
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:allowBackup="true"
         android:label="Cipher Keyboard"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light">
 
-        <!-- මෙතන android:name එක නිවැරදි කරලා තියෙන්නේ -->
+        <!-- ​ෙ​ම​ෙ​ත​ன​ android:name ​එ​ක​ ​ෙ​න​ි​ව​ැ​ර​ැ​ද​ි​ ​ත​ක​ර​ග​ ​ෙ​ම​න​ ​ෙ​ම​ ​ෙ​ම​ත​න -->
         <service
             android:name=".CipherInputMethodService"
             android:label="Cipher Keyboard"
@@ -22,7 +24,7 @@
             </intent-filter>
         </service>
 
-        <!-- Settings Activity එක -->
+        <!-- Settings Activity ​එ​ක -->
         <activity
             android:name=".SettingsActivity"
             android:exported="true">
