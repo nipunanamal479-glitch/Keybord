@@ -17,29 +17,34 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.settings_activity)
+        try {
+            setContentView(R.layout.settings_activity)
 
-        val editText = findViewById<EditText>(R.id.key_input)
-        val saveButton = findViewById<Button>(R.id.save_button)
-        val enableButton = findViewById<Button>(R.id.btn_enable_keyboard)
-        val switchButton = findViewById<Button>(R.id.btn_switch_keyboard)
-        statusText = findViewById(R.id.status_text)
+            val editText = findViewById<EditText>(R.id.key_input)
+            val saveButton = findViewById<Button>(R.id.save_button)
+            val enableButton = findViewById<Button>(R.id.btn_enable_keyboard)
+            val switchButton = findViewById<Button>(R.id.btn_switch_keyboard)
+            statusText = findViewById(R.id.status_text)
 
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        editText.setText(prefs.getString("cipher_key", "KEY"))
+            val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+            editText.setText(prefs.getString("cipher_key", "KEY"))
 
-        saveButton.setOnClickListener {
-            prefs.edit().putString("cipher_key", editText.text.toString()).apply()
-            Toast.makeText(this, "Key saved", Toast.LENGTH_SHORT).show()
-        }
+            saveButton.setOnClickListener {
+                prefs.edit().putString("cipher_key", editText.text.toString()).apply()
+                Toast.makeText(this, "Key saved", Toast.LENGTH_SHORT).show()
+            }
 
-        enableButton.setOnClickListener {
-            startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
-        }
+            enableButton.setOnClickListener {
+                startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
+            }
 
-        switchButton.setOnClickListener {
-            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.showInputMethodPicker()
+            switchButton.setOnClickListener {
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.showInputMethodPicker()
+            }
+        } catch (e: Throwable) {
+            Toast.makeText(this, "ERROR: ${e.javaClass.simpleName}: ${e.message}", Toast.LENGTH_LONG).show()
+            e.printStackTrace()
         }
     }
 
