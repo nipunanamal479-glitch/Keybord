@@ -31,6 +31,16 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
     private lateinit var clipboardManager: ClipboardManager
 
     private val clipListener = ClipboardManager.OnPrimaryClipChangedListener {
+        addCurrentClipToHistory()
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboardManager.addPrimaryClipChangedListener(clipListener)
+    }
+
+    private fun addCurrentClipToHistory() {
         val clip = clipboardManager.primaryClip
         if (clip != null && clip.itemCount > 0) {
             val text = clip.getItemAt(0).text?.toString()
@@ -38,15 +48,9 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
                 clipHistory.remove(text)
                 clipHistory.add(0, text)
                 if (clipHistory.size > 15) clipHistory.removeAt(clipHistory.size - 1)
-                refreshClipRow()
+                if (::clipRow.isInitialized) refreshClipRow()
             }
         }
-    }
-
-    override fun onCreate() {
-        super.onCreate()
-        clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboardManager.addPrimaryClipChangedListener(clipListener)
     }
 
     override fun onCreateInputView(): View {
@@ -72,6 +76,7 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
         }
 
         root.findViewById<Button>(R.id.btn_clip).setOnClickListener {
+            addCurrentClipToHistory()
             togglePanel(clipScroll, listOf(cipherRow, emojiScroll))
         }
 
