@@ -6,8 +6,6 @@ import android.graphics.Color
 import android.inputmethodservice.InputMethodService
 import android.inputmethodservice.Keyboard
 import android.inputmethodservice.KeyboardView
-import android.os.Handler
-import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
@@ -22,20 +20,33 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
     private lateinit var keyboardRoot: LinearLayout
     private lateinit var cipherRow: LinearLayout
     private lateinit var emojiScroll: HorizontalScrollView
+    private lateinit var clipScroll: HorizontalScrollView
+    private lateinit var clipRow: LinearLayout
     private lateinit var kv: KeyboardView
 
     private var isSymbols = false
     private var isShifted = false
 
-    private val handler = Handler(Looper.getMainLooper())
-    private var hue = 0f
+    private val clipHistory = mutableListOf<String>()
+    private lateinit var clipboardManager: ClipboardManager
 
-    private val rgbAnimation = object : Runnable {
-        override fun run() {
-            hue = (hue + 10) % 360
-            keyboardRoot.setBackgroundColor(Color.HSVToColor(floatArrayOf(hue, 0.7f, 0.5f)))
-            handler.postDelayed(this, 50)
+    private val clipListener = ClipboardManager.OnPrimaryClipChangedListener {
+        val clip = clipboardManager.primaryClip
+        if (clip != null && clip.itemCount > 0) {
+            val text = clip.getItemAt(0).text?.toString()
+            if (!text.isNullOrEmpty()) {
+                clipHistory.remove(text)
+                clipHistory.add(0, text)
+                if (clipHistory.size > 15) clipHistory.removeAt(clipHistory.size - 1)
+                refreshClipRow()
+            }
         }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboardManager.addPrimaryClipChangedListener(clipListener)
     }
 
     override fun onCreateInputView(): View {
@@ -45,16 +56,23 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
         kv = root.findViewById(R.id.keyboard_view)
         kv.keyboard = Keyboard(this, R.xml.qwerty)
         kv.setOnKeyboardActionListener(this)
+        kv.isPreviewEnabled = false
 
         cipherRow = root.findViewById(R.id.cipher_row)
         emojiScroll = root.findViewById(R.id.emoji_scroll)
+        clipScroll = root.findViewById(R.id.clip_scroll)
+        clipRow = root.findViewById(R.id.clip_row)
 
         root.findViewById<Button>(R.id.btn_cipher).setOnClickListener {
-            togglePanel(cipherRow, emojiScroll)
+            togglePanel(cipherRow, listOf(emojiScroll, clipScroll))
         }
 
         root.findViewById<Button>(R.id.btn_emoji).setOnClickListener {
-            togglePanel(emojiScroll, cipherRow)
+            togglePanel(emojiScroll, listOf(cipherRow, clipScroll))
+        }
+
+        root.findViewById<Button>(R.id.btn_clip).setOnClickListener {
+            togglePanel(clipScroll, listOf(cipherRow, emojiScroll))
         }
 
         root.findViewById<Button>(R.id.btn_encode).setOnClickListener {
@@ -67,18 +85,63 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
             closePanel(cipherRow)
         }
 
-        root.findViewById<Button>(R.id.btn_clip).setOnClickListener {
-            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clipData = clipboard.primaryClip
-            if (clipData != null && clipData.itemCount > 0) {
-                currentInputConnection?.commitText(clipData.getItemAt(0).text.toString(), 1)
-            }
+        setupEmojiRow(root)
+        refreshClipRow()
+
+        return root
+    }
+
+    private fun refreshClipRow() {
+        clipRow.removeAllViews()
+
+        if (clipHistory.isEmpty()) {
+            val emptyBtn = Button(this)
+            emptyBtn.text = "Clipboard eka empty"
+            emptyBtn.textSize = 14f
+            emptyBtn.isEnabled = false
+            emptyBtn.setBackgroundResource(R.drawable.keyboard_key_bg)
+            emptyBtn.setTextColor(Color.parseColor("#888888"))
+            clipRow.addView(emptyBtn)
+            return
         }
 
-        setupEmojiRow(root)
+        for (item in clipHistory) {
+            val label = if (item.length > 20) item.substring(0, 20) + "…" else item
+            val btn = Button(this)
+            btn.text = label
+            btn.textSize = 14f
+            btn.isAllCaps = false
+            btn.setBackgroundResource(R.drawable.keyboard_key_bg)
+            btn.setTextColor(Color.WHITE)
+            btn.setPadding(24, 0, 24, 0)
+            val params = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+            )
+            params.setMargins(4, 0, 4, 0)
+            btn.layoutParams = params
+            btn.setOnClickListener {
+                currentInputConnection?.commitText(item, 1)
+            }
+            clipRow.addView(btn)
+        }
 
-        handler.post(rgbAnimation)
-        return root
+        val clearBtn = Button(this)
+        clearBtn.text = "🗑 Clear"
+        clearBtn.textSize = 14f
+        clearBtn.setBackgroundResource(R.drawable.keyboard_special_key_bg)
+        clearBtn.setTextColor(Color.parseColor("#FF6B6B"))
+        val clearParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.MATCH_PARENT
+        )
+        clearParams.setMargins(4, 0, 4, 0)
+        clearBtn.layoutParams = clearParams
+        clearBtn.setOnClickListener {
+            clipHistory.clear()
+            refreshClipRow()
+        }
+        clipRow.addView(clearBtn)
     }
 
     private fun setupEmojiRow(root: LinearLayout) {
@@ -106,8 +169,10 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
         }
     }
 
-    private fun togglePanel(panel: View, otherPanel: View) {
-        if (otherPanel.visibility == View.VISIBLE) closePanel(otherPanel)
+    private fun togglePanel(panel: View, others: List<View>) {
+        for (other in others) {
+            if (other.visibility == View.VISIBLE) closePanel(other)
+        }
 
         if (panel.visibility == View.VISIBLE) {
             closePanel(panel)
@@ -188,7 +253,7 @@ class CipherInputMethodService : InputMethodService(), KeyboardView.OnKeyboardAc
 
     override fun onDestroy() {
         super.onDestroy()
-        handler.removeCallbacks(rgbAnimation)
+        clipboardManager.removePrimaryClipChangedListener(clipListener)
     }
 
     override fun onPress(p0: Int) {}
